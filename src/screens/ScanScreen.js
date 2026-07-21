@@ -56,9 +56,10 @@ export default function ScanScreen({ navigation }) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
     try {
       const photo = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.5 });
+      if (!photo?.base64) throw new Error('Камера не вернула изображение (base64)');
       await analyze(photo.base64, photo.uri);
     } catch (e) {
-      setError(t('scan_error'));
+      setError(e?.message || t('scan_error'));
       setBusy(false);
     }
   };
