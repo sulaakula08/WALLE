@@ -1,0 +1,22 @@
+# deps
+node_modules/
+# expo
+.expo/
+dist/
+web-build/
+# native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+# env / secrets
+.env
+.env.*
+# os
+.DS_Store
+Thumbs.db
+# logs
+npm-debug.*
+yarn-error.*
