@@ -4,6 +4,7 @@ import { GLView } from 'expo-gl';
 import { Renderer, TextureLoader } from 'expo-three';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
 import { Asset } from 'expo-asset';
 import * as FileSystem from 'expo-file-system';
 import { LogoMark } from './Logo';
@@ -51,18 +52,26 @@ export default function Mascot3D({ style, autoRotate = true }) {
     const renderer = new Renderer({ gl });
     renderer.setSize(w, h);
     renderer.setClearColor(0x000000, 0); // прозрачный фон
+    // Правильный вывод цвета + тон-маппинг (иначе всё тёмное)
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
     camera.position.set(0, 0.2, 4.2);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 1.4));
-    const key = new THREE.DirectionalLight(0xffffff, 1.7);
+    // Карта окружения — без неё металлические поверхности чёрные
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const key = new THREE.DirectionalLight(0xffffff, 2.0);
     key.position.set(3, 5, 4);
     scene.add(key);
-    const rim = new THREE.DirectionalLight(0x7ee2b0, 0.9);
-    rim.position.set(-3, 2, -4);
-    scene.add(rim);
+    const fill = new THREE.DirectionalLight(0xffffff, 0.8);
+    fill.position.set(-3, 2, -4);
+    scene.add(fill);
 
     try {
       const asset = Asset.fromModule(require('../../assets/Wallekhan.glb'));
