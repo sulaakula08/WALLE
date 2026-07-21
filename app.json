@@ -13,7 +13,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#0B3D2E"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -43,7 +45,8 @@
         {
           "cameraPermission": "Walley использует камеру для распознавания отходов."
         }
-      ]
+      ],
+      "expo-asset"
     ]
   }
 }
