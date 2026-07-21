@@ -1,17 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  Platform,
-} from 'react-native';
+import React, { useState, useMemo, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { WebView } from 'react-native-webview';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
-import { HAS_MAPS_KEY } from '../config';
-import { gradients } from '../theme/theme';
 import { AppHeader } from '../components/AppHeader';
 import { Card, Chip, Badge } from '../components/ui';
 import { MaterialIcon, MATERIALS } from '../components/MaterialIcon';
@@ -19,21 +10,66 @@ import { useI18n } from '../i18n/i18n';
 import { collectionPoints } from '../data/mock';
 import { colors, radius, spacing, shadow, materialColor } from '../theme/theme';
 
-// react-native-maps доступен в Expo Go на Android; при отсутствии модуля
-// показываем стилизованную заглушку, а список пунктов работает всегда.
-let MapView, Marker, PROVIDER_GOOGLE;
-try {
-  const maps = require('react-native-maps');
-  MapView = maps.default;
-  Marker = maps.Marker;
-  PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
-} catch (e) {
-  MapView = null;
-}
-
 const FILTERS = ['all', 'plastic', 'paper', 'glass', 'metal', 'organic', 'ewaste'];
 
-export default function MapScreen({ navigation }) {
+// Центр Астаны
+const ASTANA = { lat: 51.13, lng: 71.43, zoom: 12 };
+
+// HTML с картой Leaflet + тайлы OpenStreetMap (без API-ключа)
+function buildMapHtml(points, selectedId) {
+  const markers = JSON.stringify(
+    points.map((p) => ({
+      id: p.id,
+      lat: p.lat,
+      lng: p.lng,
+      name: p.name,
+      address: p.address,
+      open: p.open,
+    }))
+  );
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  html, body, #map { height: 100%; margin: 0; padding: 0; background: #eaf3ec; }
+  .pin { width: 26px; height: 26px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+         border: 2.5px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+  .pin.sel { width: 32px; height: 32px; }
+  .leaflet-popup-content { font-family: -apple-system, Roboto, sans-serif; font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+  var map = L.map('map', { zoomControl: false, attributionControl: false })
+    .setView([${ASTANA.lat}, ${ASTANA.lng}], ${ASTANA.zoom});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+  var pts = ${markers};
+  var sel = ${selectedId ? `'${selectedId}'` : 'null'};
+  var bounds = [];
+  pts.forEach(function (p) {
+    var color = p.open ? '#27AE60' : '#9AA5B1';
+    var isSel = p.id === sel;
+    var icon = L.divIcon({
+      className: '',
+      html: '<div class="pin ' + (isSel ? 'sel' : '') + '" style="background:' + color + '"></div>',
+      iconSize: [26, 26], iconAnchor: [13, 26], popupAnchor: [0, -24]
+    });
+    var m = L.marker([p.lat, p.lng], { icon: icon }).addTo(map);
+    m.bindPopup('<b>' + p.name + '</b><br>' + p.address);
+    if (isSel) m.openPopup();
+    bounds.push([p.lat, p.lng]);
+  });
+  if (bounds.length > 1) { map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 }); }
+</script>
+</body>
+</html>`;
+}
+
+export default function MapScreen() {
   const { t } = useI18n();
   const [filter, setFilter] = useState('all');
   const [selected, setSelected] = useState(collectionPoints[0].id);
@@ -46,6 +82,8 @@ export default function MapScreen({ navigation }) {
     [filter]
   );
 
+  const html = useMemo(() => buildMapHtml(points, selected), [points, selected]);
+
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <SafeAreaView edges={['top']}>
@@ -53,55 +91,18 @@ export default function MapScreen({ navigation }) {
         <AppHeader title={t('map_title')} subtitle={t('map_subtitle')} />
       </SafeAreaView>
 
-      {/* Карта */}
+      {/* Карта OpenStreetMap (без ключа) */}
       <View style={styles.mapWrap}>
-        {MapView && HAS_MAPS_KEY ? (
-          <MapView
-            style={StyleSheet.absoluteFill}
-            provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-            initialRegion={{
-              latitude: 51.13,
-              longitude: 71.44,
-              latitudeDelta: 0.12,
-              longitudeDelta: 0.12,
-            }}
-          >
-            {points.map((p) => (
-              <Marker
-                key={p.id}
-                coordinate={{ latitude: p.lat, longitude: p.lng }}
-                title={p.name}
-                description={p.address}
-                pinColor={p.open ? colors.green500 : colors.metal}
-                onPress={() => setSelected(p.id)}
-              />
-            ))}
-          </MapView>
-        ) : (
-          <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.mapFallback}>
-            {/* декоративные «пины» на карте */}
-            {points.slice(0, 5).map((p, i) => (
-              <View
-                key={p.id}
-                style={[
-                  styles.ghostPin,
-                  {
-                    top: 30 + ((i * 37) % 120),
-                    left: 40 + ((i * 61) % 240),
-                    opacity: p.open ? 1 : 0.5,
-                  },
-                ]}
-              >
-                <Ionicons name="location" size={18} color="#fff" />
-              </View>
-            ))}
-            <View style={styles.mapFallbackCenter}>
-              <MaterialCommunityIcons name="map-marker-radius" size={40} color="#fff" />
-              <Text style={styles.mapFallbackText}>{points.length} пунктов рядом</Text>
-              <Text style={styles.mapFallbackHint}>Карта появится после добавления ключа Google Maps</Text>
-            </View>
-          </LinearGradient>
-        )}
+        <WebView
+          key={filter}
+          originWhitelist={['*']}
+          source={{ html }}
+          style={{ flex: 1, backgroundColor: colors.surfaceAlt }}
+          scrollEnabled={false}
+          javaScriptEnabled
+          domStorageEnabled
+          startInLoadingState
+        />
       </View>
 
       {/* Фильтры по материалам */}
@@ -176,25 +177,12 @@ export default function MapScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   mapWrap: {
-    height: 200,
+    height: 220,
     marginHorizontal: 20,
     borderRadius: radius.lg,
     overflow: 'hidden',
     backgroundColor: colors.surfaceAlt,
     ...shadow.soft,
-  },
-  mapFallback: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  mapFallbackCenter: { alignItems: 'center', gap: 4, paddingHorizontal: 24 },
-  mapFallbackText: { color: '#fff', fontWeight: '800', fontSize: 16, marginTop: 4 },
-  mapFallbackHint: { color: 'rgba(255,255,255,0.75)', fontWeight: '600', fontSize: 11.5, textAlign: 'center' },
-  ghostPin: {
-    position: 'absolute',
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   filters: { flexGrow: 0, paddingVertical: 14 },
   pointCard: { padding: spacing.lg },

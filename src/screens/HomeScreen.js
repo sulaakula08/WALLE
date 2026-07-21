@@ -54,7 +54,8 @@ function ActivityRow({ material, label, points, kg }) {
 
 export default function HomeScreen({ navigation }) {
   const { t } = useI18n();
-  const { stats, streak, passport } = useApp();
+  const { stats, streak, passport, profile } = useApp();
+  const firstName = profile?.name || 'друг';
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -70,7 +71,7 @@ export default function HomeScreen({ navigation }) {
               <LangToggle />
             </View>
 
-            <Text style={styles.greeting}>{greeting(t)}, Алихан 👋</Text>
+            <Text style={styles.greeting}>{greeting(t)}, {firstName} 👋</Text>
             <Text style={styles.tagline}>{t('app_tagline')}</Text>
 
             {/* Кольцо эко-рейтинга */}

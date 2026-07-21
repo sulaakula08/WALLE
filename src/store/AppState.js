@@ -28,22 +28,35 @@ export function AppProvider({ children }) {
   const [passport, setPassport] = useState(initialPassport);
   const [xp, setXp] = useState(2340);
   const [streak, setStreak] = useState(6);
+  const [profile, setProfileState] = useState(null); // { name, gender, city }
+  const [hydrated, setHydrated] = useState(false);
 
   React.useEffect(() => {
-    AsyncStorage.getItem(KEY).then((raw) => {
-      if (!raw) return;
-      try {
-        const s = JSON.parse(raw);
-        if (Array.isArray(s.passport)) setPassport(s.passport);
-        if (typeof s.xp === 'number') setXp(s.xp);
-        if (typeof s.streak === 'number') setStreak(s.streak);
-      } catch {}
-    });
+    AsyncStorage.getItem(KEY)
+      .then((raw) => {
+        if (!raw) return;
+        try {
+          const s = JSON.parse(raw);
+          if (Array.isArray(s.passport)) setPassport(s.passport);
+          if (typeof s.xp === 'number') setXp(s.xp);
+          if (typeof s.streak === 'number') setStreak(s.streak);
+          if (s.profile && s.profile.name) setProfileState(s.profile);
+        } catch {}
+      })
+      .finally(() => setHydrated(true));
   }, []);
 
   const persist = useCallback((next) => {
     AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {});
   }, []);
+
+  const saveProfile = useCallback(
+    (p) => {
+      setProfileState(p);
+      persist({ passport, xp, streak, profile: p });
+    },
+    [passport, xp, streak, persist]
+  );
 
   const addWaste = useCallback(
     ({ material, label, weightKg = 0.3 }) => {
@@ -60,25 +73,25 @@ export function AppProvider({ children }) {
         const next = [entry, ...prev];
         setXp((x) => {
           const nx = x + 120;
-          persist({ passport: next, xp: nx, streak });
+          persist({ passport: next, xp: nx, streak, profile });
           return nx;
         });
         return next;
       });
       return entry;
     },
-    [persist, streak]
+    [persist, streak, profile]
   );
 
   const addXp = useCallback(
     (amount) => {
       setXp((x) => {
         const nx = x + amount;
-        persist({ passport, xp: nx, streak });
+        persist({ passport, xp: nx, streak, profile });
         return nx;
       });
     },
-    [passport, streak, persist]
+    [passport, streak, persist, profile]
   );
 
   const stats = useMemo(() => {
@@ -102,8 +115,8 @@ export function AppProvider({ children }) {
   }, [passport, xp]);
 
   const value = useMemo(
-    () => ({ passport, xp, streak, stats, addWaste, addXp }),
-    [passport, xp, streak, stats, addWaste, addXp]
+    () => ({ passport, xp, streak, stats, addWaste, addXp, profile, hydrated, saveProfile }),
+    [passport, xp, streak, stats, addWaste, addXp, profile, hydrated, saveProfile]
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

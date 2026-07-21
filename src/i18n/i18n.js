@@ -7,6 +7,19 @@ export const dictionaries = {
     lang_name: 'Рус',
     app_tagline: 'Умная переработка',
 
+    // Онбординг / регистрация
+    onb_welcome: 'Добро пожаловать в Walley',
+    onb_subtitle: 'Создадим профиль за 10 секунд',
+    onb_name: 'Как вас зовут?',
+    onb_name_ph: 'Ваше имя',
+    onb_gender: 'Пол',
+    gender_male: 'Мужской',
+    gender_female: 'Женский',
+    gender_other: 'Не указывать',
+    onb_city: 'Город',
+    onb_start: 'Начать',
+    onb_name_required: 'Введите имя, чтобы продолжить',
+
     // Навигация
     tab_home: 'Главная',
     tab_map: 'Карта',
@@ -156,6 +169,19 @@ export const dictionaries = {
   kz: {
     lang_name: 'Қаз',
     app_tagline: 'Ақылды қайта өңдеу',
+
+    // Онбординг / тіркеу
+    onb_welcome: 'Walley-ге қош келдіңіз',
+    onb_subtitle: 'Профильді 10 секундта жасаймыз',
+    onb_name: 'Атыңыз кім?',
+    onb_name_ph: 'Атыңыз',
+    onb_gender: 'Жынысы',
+    gender_male: 'Ер',
+    gender_female: 'Әйел',
+    gender_other: 'Көрсетпеу',
+    onb_city: 'Қала',
+    onb_start: 'Бастау',
+    onb_name_required: 'Жалғастыру үшін атыңызды енгізіңіз',
 
     tab_home: 'Басты бет',
     tab_map: 'Карта',

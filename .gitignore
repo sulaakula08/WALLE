@@ -29,3 +29,6 @@ Thumbs.db
 # logs
 npm-debug.*
 yarn-error.*
+
+# local harness settings (may contain keys)
+.claude/settings.local.json

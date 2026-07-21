@@ -8,14 +8,15 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { useFonts } from 'expo-font';
+import * as Font from 'expo-font';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { LogoMark } from './src/components/Logo';
 
 import { I18nProvider, useI18n } from './src/i18n/i18n';
-import { AppProvider } from './src/store/AppState';
+import { AppProvider, useApp } from './src/store/AppState';
 import { colors, gradients, shadow } from './src/theme/theme';
 
+import OnboardingScreen from './src/screens/OnboardingScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import MapScreen from './src/screens/MapScreen';
 import ScanScreen from './src/screens/ScanScreen';
@@ -112,12 +113,26 @@ const navTheme = {
 export default function App() {
   // Предзагружаем шрифты вектор-иконок — иначе в релизной сборке
   // MaterialCommunityIcons / Ionicons отрисовываются пустыми.
-  const [fontsLoaded] = useFonts({
-    ...MaterialCommunityIcons.font,
-    ...Ionicons.font,
-  });
+  // Приложение стартует В ЛЮБОМ случае: успех, ошибка или таймаут —
+  // чтобы никогда не зависнуть на заставке.
+  const [ready, setReady] = React.useState(false);
 
-  if (!fontsLoaded) {
+  React.useEffect(() => {
+    let finished = false;
+    const finish = () => {
+      if (!finished) {
+        finished = true;
+        setReady(true);
+      }
+    };
+    Font.loadAsync({ ...MaterialCommunityIcons.font, ...Ionicons.font })
+      .catch(() => {})
+      .finally(finish);
+    const safety = setTimeout(finish, 4000); // предохранитель
+    return () => clearTimeout(safety);
+  }, []);
+
+  if (!ready) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.forest800, alignItems: 'center', justifyContent: 'center' }}>
         <LogoMark size={96} glow />
@@ -131,24 +146,41 @@ export default function App() {
       <I18nProvider>
         <AppProvider>
           <StatusBar style="auto" />
-          <NavigationContainer theme={navTheme}>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="Tabs" component={Tabs} />
-              <Stack.Screen
-                name="Robot"
-                component={RobotScreen}
-                options={{ presentation: 'card', animation: 'slide_from_right' }}
-              />
-              <Stack.Screen
-                name="Quiz"
-                component={QuizScreen}
-                options={{ presentation: 'card', animation: 'slide_from_right' }}
-              />
-            </Stack.Navigator>
-          </NavigationContainer>
+          <RootNavigator />
         </AppProvider>
       </I18nProvider>
     </SafeAreaProvider>
+  );
+}
+
+// Маршрутизация верхнего уровня: онбординг при первом запуске, иначе — вкладки
+function RootNavigator() {
+  const { hydrated, profile } = useApp();
+
+  if (!hydrated) {
+    return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
+  }
+
+  if (!profile) {
+    return <OnboardingScreen />;
+  }
+
+  return (
+    <NavigationContainer theme={navTheme}>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Tabs" component={Tabs} />
+        <Stack.Screen
+          name="Robot"
+          component={RobotScreen}
+          options={{ presentation: 'card', animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="Quiz"
+          component={QuizScreen}
+          options={{ presentation: 'card', animation: 'slide_from_right' }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 

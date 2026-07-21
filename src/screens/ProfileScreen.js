@@ -14,9 +14,11 @@ const MY_CLAN_ID = 'c1';
 
 export default function ProfileScreen() {
   const { t, lang, changeLang } = useI18n();
-  const { stats, xp } = useApp();
+  const { stats, xp, profile } = useApp();
   const myClan = clans.find((c) => c.id === MY_CLAN_ID);
   const myRank = clans.findIndex((c) => c.id === MY_CLAN_ID) + 1;
+  const displayName = profile?.name || 'Гость';
+  const handle = '@' + (profile?.name || 'guest').toLowerCase().replace(/\s+/g, '');
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
@@ -31,14 +33,14 @@ export default function ProfileScreen() {
 
             <View style={styles.profileRow}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>А</Text>
+                <Text style={styles.avatarText}>{displayName.charAt(0).toUpperCase()}</Text>
                 <View style={styles.levelBadge}>
                   <Text style={styles.levelBadgeText}>{stats.level}</Text>
                 </View>
               </View>
               <View style={{ flex: 1, marginLeft: 16 }}>
-                <Text style={styles.name}>Алихан</Text>
-                <Text style={styles.handle}>@alikhan · {myClan.emoji} {myClan.name}</Text>
+                <Text style={styles.name}>{displayName}</Text>
+                <Text style={styles.handle}>{handle} · {myClan.emoji} {myClan.name}</Text>
                 <View style={{ marginTop: 10 }}>
                   <View style={styles.xpRow}>
                     <Text style={styles.xpText}>{xp} XP</Text>
