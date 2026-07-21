@@ -44,7 +44,7 @@ export default function ScanScreen({ navigation }) {
       setResult(res);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e) {
-      setError(t('scan_error'));
+      setError(e?.message || t('scan_error'));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
     } finally {
       setBusy(false);

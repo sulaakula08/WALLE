@@ -48,7 +48,7 @@ export default function QuizScreen() {
       setChosen(null);
       setPhase('play');
     } catch (e) {
-      setError(t('scan_error'));
+      setError(e?.message || t('scan_error'));
       setPhase('intro');
     }
   };

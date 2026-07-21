@@ -8,7 +8,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { useFonts } from 'expo-font';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { LogoMark } from './src/components/Logo';
 
 import { I18nProvider, useI18n } from './src/i18n/i18n';
 import { AppProvider } from './src/store/AppState';
@@ -108,6 +110,22 @@ const navTheme = {
 };
 
 export default function App() {
+  // Предзагружаем шрифты вектор-иконок — иначе в релизной сборке
+  // MaterialCommunityIcons / Ionicons отрисовываются пустыми.
+  const [fontsLoaded] = useFonts({
+    ...MaterialCommunityIcons.font,
+    ...Ionicons.font,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.forest800, alignItems: 'center', justifyContent: 'center' }}>
+        <LogoMark size={96} glow />
+        <Text style={{ color: '#fff', fontSize: 26, fontWeight: '800', marginTop: 16 }}>Walley</Text>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <I18nProvider>

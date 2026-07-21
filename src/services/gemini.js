@@ -7,6 +7,9 @@ const endpoint = () =>
 
 // Низкоуровневый вызов generateContent
 async function callGemini(parts, { json = false, schema = null, temperature = 0.4 } = {}) {
+  if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('PASTE_')) {
+    throw new Error('Ключ Gemini не задан. Вставьте новый ключ в src/secrets.js');
+  }
   const body = {
     contents: [{ role: 'user', parts }],
     generationConfig: {
@@ -24,7 +27,13 @@ async function callGemini(parts, { json = false, schema = null, temperature = 0.
 
   if (!res.ok) {
     const errText = await res.text().catch(() => '');
-    throw new Error(`Gemini ${res.status}: ${errText.slice(0, 200)}`);
+    if (res.status === 403 && /leaked/i.test(errText)) {
+      throw new Error('Ключ заблокирован Google как утёкший. Создайте новый в aistudio.google.com');
+    }
+    if (res.status === 400 && /API key not valid/i.test(errText)) {
+      throw new Error('Неверный ключ Gemini. Проверьте src/secrets.js');
+    }
+    throw new Error(`Gemini ${res.status}: ${errText.slice(0, 160)}`);
   }
 
   const data = await res.json();

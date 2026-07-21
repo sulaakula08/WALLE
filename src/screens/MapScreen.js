@@ -8,7 +8,10 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { HAS_MAPS_KEY } from '../config';
+import { gradients } from '../theme/theme';
 import { AppHeader } from '../components/AppHeader';
 import { Card, Chip, Badge } from '../components/ui';
 import { MaterialIcon, MATERIALS } from '../components/MaterialIcon';
@@ -52,7 +55,7 @@ export default function MapScreen({ navigation }) {
 
       {/* Карта */}
       <View style={styles.mapWrap}>
-        {MapView ? (
+        {MapView && HAS_MAPS_KEY ? (
           <MapView
             style={StyleSheet.absoluteFill}
             provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
@@ -75,10 +78,29 @@ export default function MapScreen({ navigation }) {
             ))}
           </MapView>
         ) : (
-          <View style={styles.mapFallback}>
-            <MaterialCommunityIcons name="map-marker-radius" size={48} color={colors.green500} />
-            <Text style={styles.mapFallbackText}>Карта · {points.length} пунктов</Text>
-          </View>
+          <LinearGradient colors={gradients.brand} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.mapFallback}>
+            {/* декоративные «пины» на карте */}
+            {points.slice(0, 5).map((p, i) => (
+              <View
+                key={p.id}
+                style={[
+                  styles.ghostPin,
+                  {
+                    top: 30 + ((i * 37) % 120),
+                    left: 40 + ((i * 61) % 240),
+                    opacity: p.open ? 1 : 0.5,
+                  },
+                ]}
+              >
+                <Ionicons name="location" size={18} color="#fff" />
+              </View>
+            ))}
+            <View style={styles.mapFallbackCenter}>
+              <MaterialCommunityIcons name="map-marker-radius" size={40} color="#fff" />
+              <Text style={styles.mapFallbackText}>{points.length} пунктов рядом</Text>
+              <Text style={styles.mapFallbackHint}>Карта появится после добавления ключа Google Maps</Text>
+            </View>
+          </LinearGradient>
         )}
       </View>
 
@@ -161,8 +183,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceAlt,
     ...shadow.soft,
   },
-  mapFallback: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  mapFallbackText: { color: colors.textMuted, fontWeight: '700' },
+  mapFallback: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  mapFallbackCenter: { alignItems: 'center', gap: 4, paddingHorizontal: 24 },
+  mapFallbackText: { color: '#fff', fontWeight: '800', fontSize: 16, marginTop: 4 },
+  mapFallbackHint: { color: 'rgba(255,255,255,0.75)', fontWeight: '600', fontSize: 11.5, textAlign: 'center' },
+  ghostPin: {
+    position: 'absolute',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   filters: { flexGrow: 0, paddingVertical: 14 },
   pointCard: { padding: spacing.lg },
   pin: {
