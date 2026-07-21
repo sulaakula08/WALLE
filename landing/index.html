@@ -1,0 +1,476 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Walley — умная переработка</title>
+<meta name="description" content="Walley — приложение умной переработки: AI-распознавание отходов, карта пунктов приёма, цифровой паспорт и робот-курьер. Астана, Казахстан." />
+<style>
+  :root {
+    --forest-900:#08301f; --forest-800:#0b3d2e; --forest-700:#0f4d3a;
+    --green-600:#1e8e5a; --green-500:#27ae60; --green-400:#4cd08a;
+    --mint-300:#7ee2b0; --mint-100:#d6f5e4;
+    --clay:#c46a34; --sun:#f2c14e; --water:#2cc5c0;
+
+    /* tokens (light default) */
+    --bg:#eef4ee; --bg-2:#e2ede4; --surface:#ffffff;
+    --ink:#0c1f16; --ink-soft:#40554a; --ink-faint:#7c9084;
+    --line:#d3e2d6; --accent:var(--green-500); --accent-ink:#0b3d2e;
+    --ring-track:#d3e2d6;
+    --hero-bg:#0b3d2e; --hero-ink:#ffffff; --hero-soft:#a7d8bf;
+
+    --maxw:1120px; --r:18px; --r-lg:26px;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,monospace;
+    --sans:"Segoe UI Variable","Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#071c13; --bg-2:#0a2419; --surface:#0e2c1f;
+      --ink:#eaf6ee; --ink-soft:#a9c4b4; --ink-faint:#6f8a7c;
+      --line:#1b3a2b; --accent:var(--green-400); --accent-ink:#08301f;
+      --ring-track:#1b3a2b;
+      --hero-bg:#061a11; --hero-ink:#ffffff; --hero-soft:#8fd0ae;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg:#eef4ee; --bg-2:#e2ede4; --surface:#ffffff;
+    --ink:#0c1f16; --ink-soft:#40554a; --ink-faint:#7c9084;
+    --line:#d3e2d6; --accent:#27ae60; --accent-ink:#0b3d2e; --ring-track:#d3e2d6;
+    --hero-bg:#0b3d2e; --hero-ink:#ffffff; --hero-soft:#a7d8bf;
+  }
+  :root[data-theme="dark"] {
+    --bg:#071c13; --bg-2:#0a2419; --surface:#0e2c1f;
+    --ink:#eaf6ee; --ink-soft:#a9c4b4; --ink-faint:#6f8a7c;
+    --line:#1b3a2b; --accent:#4cd08a; --accent-ink:#08301f; --ring-track:#1b3a2b;
+    --hero-bg:#061a11; --hero-ink:#ffffff; --hero-soft:#8fd0ae;
+  }
+
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--sans); line-height:1.55;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  h1,h2,h3 { text-wrap:balance; margin:0; letter-spacing:-.02em; }
+  p { margin:0; }
+  a { color:inherit; text-decoration:none; }
+  .wrap { max-width:var(--maxw); margin:0 auto; padding:0 24px; }
+  .eyebrow {
+    font-family:var(--mono); font-size:12px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--accent); font-weight:600;
+  }
+
+  /* ---------- NAV ---------- */
+  header.nav {
+    position:sticky; top:0; z-index:50;
+    background:color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter:saturate(160%) blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav-in { display:flex; align-items:center; justify-content:space-between; height:66px; }
+  .brand { display:flex; align-items:center; gap:11px; font-weight:800; font-size:20px; letter-spacing:-.02em; }
+  .nav-links { display:flex; align-items:center; gap:28px; }
+  .nav-links a.link { color:var(--ink-soft); font-weight:600; font-size:14.5px; }
+  .nav-links a.link:hover { color:var(--ink); }
+  .btn {
+    display:inline-flex; align-items:center; gap:9px; cursor:pointer;
+    font-weight:700; font-size:15px; border:none; border-radius:999px;
+    padding:12px 22px; background:var(--accent); color:var(--accent-ink);
+    transition:transform .16s ease, box-shadow .16s ease; white-space:nowrap;
+  }
+  .btn:hover { transform:translateY(-2px); box-shadow:0 10px 26px -8px color-mix(in srgb,var(--accent) 70%, transparent); }
+  .btn.ghost { background:transparent; color:var(--ink); border:1.5px solid var(--line); }
+  .btn.big { padding:16px 30px; font-size:16.5px; }
+  .btn.on-dark { background:var(--mint-300); color:#08301f; }
+  .theme-toggle { background:transparent; border:1.5px solid var(--line); border-radius:999px; width:40px; height:40px; cursor:pointer; color:var(--ink-soft); display:grid; place-items:center; }
+  @media (max-width:820px){ .nav-links .link { display:none; } }
+
+  /* ---------- HERO ---------- */
+  .hero { position:relative; background:var(--hero-bg); color:var(--hero-ink); overflow:hidden;
+    border-bottom-left-radius:38px; border-bottom-right-radius:38px; }
+  #leaves { position:absolute; inset:0; width:100%; height:100%; opacity:.5; }
+  .hero-in { position:relative; z-index:2; display:grid; grid-template-columns:1.15fr .85fr;
+    gap:40px; align-items:center; padding:76px 24px 96px; }
+  .hero h1 { font-size:clamp(38px,5.6vw,66px); font-weight:900; line-height:1.02; }
+  .hero h1 .accent { color:var(--mint-300); }
+  .hero .lede { color:var(--hero-soft); font-size:clamp(16px,1.7vw,19px); margin-top:22px; max-width:30ch; }
+  .hero-cta { display:flex; gap:14px; margin-top:34px; flex-wrap:wrap; }
+  .hero-meta { display:flex; gap:26px; margin-top:34px; flex-wrap:wrap; }
+  .hero-meta .m { display:flex; flex-direction:column; }
+  .hero-meta .m b { font-family:var(--mono); font-size:24px; font-weight:700; color:#fff; }
+  .hero-meta .m span { font-size:12.5px; color:var(--hero-soft); letter-spacing:.02em; }
+  .badge-row { display:flex; align-items:center; gap:10px; margin-bottom:22px; }
+  .pill { display:inline-flex; align-items:center; gap:7px; font-size:12.5px; font-weight:700;
+    background:rgba(255,255,255,.1); color:#fff; padding:7px 13px; border-radius:999px; border:1px solid rgba(255,255,255,.14); }
+  .pill .dot { width:7px; height:7px; border-radius:50%; background:var(--mint-300); box-shadow:0 0 0 4px rgba(126,226,176,.25); }
+
+  /* phone mockup */
+  .phone-stage { display:grid; place-items:center; }
+  .phone { position:relative; width:270px; height:560px; border-radius:42px; padding:12px;
+    background:linear-gradient(160deg,#123f30,#0a2c20); box-shadow:0 40px 80px -30px rgba(0,0,0,.7), inset 0 0 0 1.5px rgba(255,255,255,.08);
+    animation:float 6s ease-in-out infinite; }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+  .screen { position:relative; width:100%; height:100%; border-radius:32px; overflow:hidden;
+    background:linear-gradient(170deg,#0f4d3a,#1e8e5a 60%,#27ae60); }
+  .sc-top { display:flex; align-items:center; justify-content:space-between; padding:16px 16px 0; color:#fff; }
+  .sc-brand { display:flex; align-items:center; gap:7px; font-weight:800; font-size:14px; }
+  .sc-lang { font-size:9px; background:rgba(255,255,255,.9); color:#0b3d2e; font-weight:800; padding:4px 8px; border-radius:999px; }
+  .sc-hi { color:#fff; font-weight:800; font-size:16px; padding:14px 16px 0; }
+  .sc-sub { color:var(--mint-300); font-size:10px; padding:0 16px; font-weight:600; }
+  .sc-card { margin:12px 16px 0; background:rgba(255,255,255,.13); border-radius:16px; padding:13px; display:flex; align-items:center; gap:12px; }
+  .ring { width:62px; height:62px; flex:none; }
+  .sc-card .r-t { color:#fff; font-weight:800; font-size:13px; }
+  .sc-card .r-b { color:var(--mint-300); font-size:9.5px; font-weight:600; margin-top:2px; }
+  .sc-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin:12px 16px 0; }
+  .sc-tile { border-radius:14px; padding:11px; min-height:60px; display:flex; flex-direction:column; justify-content:space-between; }
+  .sc-tile b { color:#fff; font-size:11px; font-weight:800; }
+  .sc-tile i { width:26px; height:26px; border-radius:8px; background:rgba(255,255,255,.22); display:block; }
+  .sc-nav { position:absolute; left:14px; right:14px; bottom:14px; height:48px; background:#fff; border-radius:18px;
+    display:flex; align-items:center; justify-content:space-around; box-shadow:0 12px 30px -8px rgba(0,0,0,.5); }
+  .sc-nav .fab { width:42px; height:42px; border-radius:14px; background:linear-gradient(135deg,#27ae60,#4cd08a); margin-top:-24px; box-shadow:0 8px 18px -4px rgba(39,174,96,.6); }
+  .sc-nav .n { width:16px; height:16px; border-radius:5px; background:#c9d8cd; }
+  .sc-nav .n.on { background:#27ae60; }
+
+  /* ---------- SECTION SHELL ---------- */
+  section { padding:88px 0; }
+  .sec-head { max-width:640px; margin-bottom:44px; }
+  .sec-head h2 { font-size:clamp(28px,3.6vw,42px); font-weight:850; margin-top:14px; }
+  .sec-head p { color:var(--ink-soft); font-size:17px; margin-top:14px; }
+
+  /* stats strip */
+  .stats { background:var(--bg-2); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .stats-in { display:grid; grid-template-columns:repeat(4,1fr); gap:24px; padding:38px 24px; }
+  .stat b { font-family:var(--mono); font-size:clamp(26px,3.4vw,38px); font-weight:700; color:var(--ink); display:block; }
+  .stat span { color:var(--ink-soft); font-size:13.5px; font-weight:600; }
+  @media (max-width:720px){ .stats-in { grid-template-columns:1fr 1fr; row-gap:30px; } }
+
+  /* features */
+  .feat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+  @media (max-width:900px){ .feat-grid { grid-template-columns:1fr 1fr; } }
+  @media (max-width:600px){ .feat-grid { grid-template-columns:1fr; } }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:var(--r-lg); padding:26px;
+    transition:transform .2s ease, border-color .2s ease; }
+  .card:hover { transform:translateY(-4px); border-color:var(--accent); }
+  .card .ic { width:52px; height:52px; border-radius:15px; display:grid; place-items:center; margin-bottom:18px;
+    background:color-mix(in srgb, var(--accent) 15%, transparent); }
+  .card h3 { font-size:19px; font-weight:800; }
+  .card p { color:var(--ink-soft); font-size:14.5px; margin-top:9px; }
+  .card .tag { font-family:var(--mono); font-size:11px; color:var(--accent); text-transform:uppercase; letter-spacing:.12em; margin-top:14px; display:inline-block; }
+
+  /* how it works */
+  .steps { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  @media (max-width:840px){ .steps { grid-template-columns:1fr 1fr; } }
+  @media (max-width:480px){ .steps { grid-template-columns:1fr; } }
+  .step { position:relative; padding:26px 22px; border-radius:var(--r-lg); background:var(--surface); border:1px solid var(--line); }
+  .step .no { font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent); }
+  .step h3 { font-size:17px; margin-top:12px; }
+  .step p { color:var(--ink-soft); font-size:13.5px; margin-top:8px; }
+  .step .line { position:absolute; top:34px; right:-9px; width:18px; height:2px; background:var(--line); }
+  @media (max-width:840px){ .step .line { display:none; } }
+
+  /* passport band */
+  .band { background:var(--forest-800); color:#fff; border-radius:var(--r-lg); padding:48px; display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center; }
+  @media (max-width:800px){ .band { grid-template-columns:1fr; padding:34px; } }
+  .band h2 { font-size:clamp(26px,3.2vw,36px); font-weight:850; }
+  .band p { color:var(--hero-soft); margin-top:16px; font-size:16px; }
+  .track { display:flex; flex-direction:column; gap:0; }
+  .tstep { display:flex; gap:16px; }
+  .tstep .col { display:flex; flex-direction:column; align-items:center; }
+  .tstep .knot { width:34px; height:34px; border-radius:11px; display:grid; place-items:center; background:var(--green-500); color:#fff; flex:none; }
+  .tstep .knot.pending { background:rgba(255,255,255,.14); }
+  .tstep .bar { width:2px; flex:1; background:rgba(255,255,255,.2); min-height:22px; }
+  .tstep .bar.done { background:var(--green-400); }
+  .tstep .txt { padding-bottom:22px; }
+  .tstep .txt b { font-size:14.5px; }
+  .tstep .txt span { display:block; font-family:var(--mono); font-size:11px; color:var(--hero-soft); margin-top:2px; }
+
+  /* download CTA */
+  .cta { text-align:center; }
+  .cta-box { background:linear-gradient(150deg,var(--forest-700),var(--green-600)); border-radius:32px; padding:60px 32px;
+    color:#fff; position:relative; overflow:hidden; }
+  .cta-box h2 { font-size:clamp(28px,4vw,46px); font-weight:900; }
+  .cta-box p { color:var(--hero-soft); margin:16px auto 0; max-width:44ch; font-size:17px; }
+  .cta-box .hero-cta { justify-content:center; }
+  .cta-note { font-family:var(--mono); font-size:12px; color:var(--hero-soft); margin-top:20px; }
+
+  /* footer */
+  footer { padding:44px 0 60px; border-top:1px solid var(--line); margin-top:8px; }
+  .foot-in { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+  .foot-in .muted { color:var(--ink-faint); font-size:13.5px; }
+  .foot-links { display:flex; gap:22px; }
+  .foot-links a { color:var(--ink-soft); font-weight:600; font-size:14px; }
+  .foot-links a:hover { color:var(--accent); }
+
+  .reveal { opacity:0; transform:translateY(22px); transition:opacity .7s ease, transform .7s ease; }
+  .reveal.in { opacity:1; transform:none; }
+  @media (prefers-reduced-motion:reduce){
+    .phone{animation:none;} .reveal{opacity:1;transform:none;transition:none;} html{scroll-behavior:auto;}
+  }
+  @media (max-width:860px){
+    .hero-in{grid-template-columns:1fr; text-align:left;}
+    .phone-stage{margin-top:20px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top" aria-label="Walley">
+      <span id="logo-slot"></span> Walley
+    </a>
+    <nav class="nav-links">
+      <a class="link" href="#features">Возможности</a>
+      <a class="link" href="#how">Как работает</a>
+      <a class="link" href="#passport">Паспорт</a>
+      <button class="theme-toggle" id="themeBtn" aria-label="Сменить тему" title="Тема">◐</button>
+      <a class="btn" href="#download">Скачать</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="top" style="padding:0;">
+  <canvas id="leaves" aria-hidden="true"></canvas>
+  <div class="wrap hero-in">
+    <div class="reveal in">
+      <div class="badge-row">
+        <span class="pill"><span class="dot"></span> Астана · Казахстан</span>
+        <span class="pill">RU / ҚАЗ</span>
+      </div>
+      <h1>Умная переработка <span class="accent">в вашем кармане</span></h1>
+      <p class="lede">Сканируйте отходы через ИИ, находите пункты приёма, вызывайте робота-курьера и следите за путём материалов до переработчика.</p>
+      <div class="hero-cta">
+        <a class="btn on-dark big" href="#download">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Скачать для Android
+        </a>
+        <a class="btn ghost big" href="#how" style="color:#fff;border-color:rgba(255,255,255,.25)">Как это работает</a>
+      </div>
+      <div class="hero-meta">
+        <div class="m"><b>5</b><span>материалов распознаёт ИИ</span></div>
+        <div class="m"><b>100%</b><span>прозрачный путь отходов</span></div>
+        <div class="m"><b>0 ₸</b><span>бесплатно</span></div>
+      </div>
+    </div>
+
+    <!-- Phone mockup -->
+    <div class="phone-stage reveal in">
+      <div class="phone" role="img" aria-label="Экран приложения Walley">
+        <div class="screen">
+          <div class="sc-top">
+            <div class="sc-brand"><span id="logo-slot-2"></span> Walley</div>
+            <div class="sc-lang">RU</div>
+          </div>
+          <div class="sc-hi">Добрый вечер, Ернар</div>
+          <div class="sc-sub">Умная переработка</div>
+          <div class="sc-card">
+            <svg class="ring" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="8"/>
+              <circle cx="50" cy="50" r="42" fill="none" stroke="#7ee2b0" stroke-width="8" stroke-linecap="round"
+                      stroke-dasharray="264" stroke-dashoffset="55" transform="rotate(-90 50 50)"/>
+              <text x="50" y="56" text-anchor="middle" fill="#fff" font-size="26" font-weight="800" font-family="monospace">79</text>
+            </svg>
+            <div><div class="r-t">Эко-рейтинг · Уровень 3</div><div class="r-b">210 XP до следующего уровня</div></div>
+          </div>
+          <div class="sc-grid">
+            <div class="sc-tile" style="background:linear-gradient(135deg,#27ae60,#4cd08a)"><i></i><b>Сканировать</b></div>
+            <div class="sc-tile" style="background:linear-gradient(135deg,#2cc5c0,#3fa9f5)"><i></i><b>Вызвать робота</b></div>
+            <div class="sc-tile" style="background:linear-gradient(135deg,#1e8e5a,#0f4d3a)"><i></i><b>Пункты приёма</b></div>
+            <div class="sc-tile" style="background:linear-gradient(135deg,#f2c14e,#f0a431)"><i></i><b>Эко-квиз</b></div>
+          </div>
+          <div class="sc-nav">
+            <span class="n on"></span><span class="n"></span><span class="fab"></span><span class="n"></span><span class="n"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="wrap stats-in">
+    <div class="stat reveal"><b>−1.7×</b><span>кг CO₂ за каждый кг переработки</span></div>
+    <div class="stat reveal"><b>5</b><span>пунктов приёма на карте Астаны</span></div>
+    <div class="stat reveal"><b>4</b><span>шага пути отхода до переработчика</span></div>
+    <div class="stat reveal"><b>∞</b><span>эко-квизов от ИИ</span></div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">Возможности</div>
+      <h2>Всё для переработки — в одном приложении</h2>
+      <p>От распознавания отхода до подтверждения переработчиком. Прозрачно, наглядно и с игровой мотивацией.</p>
+    </div>
+    <div class="feat-grid">
+
+      <div class="card reveal">
+        <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M4 8V6a2 2 0 012-2h2M16 4h2a2 2 0 012 2v2M20 16v2a2 2 0 01-2 2h-2M8 20H6a2 2 0 01-2-2v-2" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/><path d="M4 12h16" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h3>AI-распознавание отходов</h3>
+        <p>Наведите камеру — Gemini определит тип материала, подскажет, как подготовить, и покажет ближайший пункт.</p>
+        <span class="tag">Gemini Vision</span>
+      </div>
+
+      <div class="card reveal">
+        <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.6 7-11a7 7 0 10-14 0c0 5.4 7 11 7 11z" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.5" stroke="var(--accent)" stroke-width="2"/></svg></div>
+        <h3>Карта пунктов приёма</h3>
+        <p>Ближайшие точки сортировки на живой карте Астаны с фильтром по материалам и режимом работы.</p>
+        <span class="tag">OpenStreetMap</span>
+      </div>
+
+      <div class="card reveal">
+        <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2.5" stroke="var(--accent)" stroke-width="2"/><circle cx="8.5" cy="11" r="2" stroke="var(--accent)" stroke-width="2"/><path d="M13 9h5M13 13h5M6 15h8" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h3>Цифровой паспорт</h3>
+        <p>Каждый отход получает ID. Следите за его путём в реальном времени — до подтверждения переработчиком.</p>
+        <span class="tag">Трекинг пути</span>
+      </div>
+
+      <div class="card reveal">
+        <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="5" y="8" width="14" height="10" rx="3" stroke="var(--accent)" stroke-width="2"/><path d="M12 5v3M9 13h.01M15 13h.01" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/><path d="M3 12v3M21 12v3" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h3>Робот-курьер</h3>
+        <p>Робот забирает отходы, взвешивает, присваивает ID и везёт на сортировку — а по пути фиксирует переполненные баки.</p>
+        <span class="tag">Компьютерное зрение</span>
+      </div>
+
+      <div class="card reveal">
+        <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 3a5 5 0 00-3 9c.7.5 1 1.2 1 2v1h4v-1c0-.8.3-1.5 1-2a5 5 0 00-3-9z" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/><path d="M10 20h4" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h3>Эко-квизы</h3>
+        <p>Вопросы генерирует ИИ. Учитесь играя, зарабатывайте XP и поднимайтесь по уровням.</p>
+        <span class="tag">Геймификация</span>
+      </div>
+
+      <div class="card reveal">
+        <div class="ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M7 4h10v4a5 5 0 01-10 0V4z" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/><path d="M17 5h2.5a1.5 1.5 0 010 3H17M7 5H4.5a1.5 1.5 0 000 3H7M9 20h6M12 13v3" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h3>Кланы и рейтинг</h3>
+        <p>Объединяйтесь в эко-кланы, соревнуйтесь городами и поднимайте свой клан в общем рейтинге.</p>
+        <span class="tag">Сообщество</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" style="background:var(--bg-2); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">Как это работает</div>
+      <h2>Четыре шага до прозрачной переработки</h2>
+    </div>
+    <div class="steps">
+      <div class="step reveal"><div class="line"></div><div class="no">01</div><h3>Сканируй</h3><p>Наведи камеру на отход — ИИ определит материал за секунды.</p></div>
+      <div class="step reveal"><div class="line"></div><div class="no">02</div><h3>Сдай</h3><p>Отнеси в ближайший пункт или вызови робота-курьера.</p></div>
+      <div class="step reveal"><div class="line"></div><div class="no">03</div><h3>Отследи</h3><p>Следи за путём отхода по цифровому паспорту в реальном времени.</p></div>
+      <div class="step reveal"><div class="no">04</div><h3>Получи баллы</h3><p>Зарабатывай XP, открывай достижения, расти в рейтинге кланов.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- PASSPORT BAND -->
+<section id="passport">
+  <div class="wrap">
+    <div class="band reveal">
+      <div>
+        <div class="eyebrow" style="color:var(--mint-300)">Цифровой паспорт</div>
+        <h2>Видно каждый шаг — от вас до переработчика</h2>
+        <p>Больше никакого «выбросил и забыл». Walley присваивает отходу цифровой идентификатор и показывает весь путь материала, формируя доверие к системе переработки.</p>
+        <div class="hero-cta">
+          <a class="btn on-dark" href="#download">Скачать приложение</a>
+        </div>
+      </div>
+      <div class="track">
+        <div class="tstep"><div class="col"><div class="knot">✓</div><div class="bar done"></div></div><div class="txt"><b>Передано</b><span>WL-8F3A21 · 10:24</span></div></div>
+        <div class="tstep"><div class="col"><div class="knot">✓</div><div class="bar done"></div></div><div class="txt"><b>Собрано роботом</b><span>0.4 кг · ПЭТ</span></div></div>
+        <div class="tstep"><div class="col"><div class="knot">✓</div><div class="bar done"></div></div><div class="txt"><b>Транспортировка</b><span>→ KazRecycle #2</span></div></div>
+        <div class="tstep"><div class="col"><div class="knot">✓</div><div class="bar"></div></div><div class="txt"><b>Сортировка</b><span>в процессе</span></div></div>
+        <div class="tstep"><div class="col"><div class="knot pending">•</div></div><div class="txt"><b>Переработано</b><span>ожидает подтверждения</span></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DOWNLOAD -->
+<section id="download" class="cta">
+  <div class="wrap">
+    <div class="cta-box reveal">
+      <div class="eyebrow" style="color:var(--mint-300)">Бесплатно · Android</div>
+      <h2>Начните перерабатывать с умом</h2>
+      <p>Скачайте Walley и превратите сортировку отходов в наглядный, честный и увлекательный процесс.</p>
+      <div class="hero-cta">
+        <a class="btn on-dark big" href="#" id="dlBtn" aria-disabled="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4.5-4.5M12 15l4.5-4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Скачать APK
+        </a>
+      </div>
+      <div class="cta-note">apk · arm64 · ~107 МБ · Android 8.0+</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap foot-in">
+    <div class="brand"><span id="logo-slot-3"></span> Walley</div>
+    <div class="foot-links">
+      <a href="#features">Возможности</a>
+      <a href="#how">Как работает</a>
+      <a href="#download">Скачать</a>
+    </div>
+    <div class="muted">© 2026 Walley · Сделано в Астане 🌿</div>
+  </div>
+</footer>
+
+<script>
+  // Логотип-робот (SVG) в три слота
+  var LOGO = '<svg width="30" height="30" viewBox="0 0 120 120" fill="none" aria-hidden="true">'
+    +'<path d="M18 74 A44 44 0 1 1 40 100" stroke="#4cd08a" stroke-width="7" stroke-linecap="round" fill="none" opacity=".7"/>'
+    +'<path d="M60 30 C60 20 62 14 68 8" stroke="#27ae60" stroke-width="5" stroke-linecap="round"/>'
+    +'<path d="M68 8 C82 8 90 18 86 32 C74 34 64 24 68 8 Z" fill="#4cd08a"/>'
+    +'<rect x="26" y="34" width="68" height="60" rx="20" fill="#1e8e5a"/>'
+    +'<rect x="34" y="44" width="52" height="34" rx="15" fill="#0b3d2e"/>'
+    +'<circle cx="52" cy="61" r="7.5" fill="#7ee2b0"/><circle cx="52" cy="61" r="3.2" fill="#0b3d2e"/>'
+    +'<circle cx="74" cy="61" r="7.5" fill="#7ee2b0"/><circle cx="74" cy="61" r="3.2" fill="#0b3d2e"/>'
+    +'<path d="M54 72 Q60 76 66 72" stroke="#4cd08a" stroke-width="3" stroke-linecap="round" fill="none"/>'
+    +'<rect x="20" y="54" width="8" height="20" rx="4" fill="#14603f"/><rect x="92" y="54" width="8" height="20" rx="4" fill="#14603f"/></svg>';
+  ['logo-slot','logo-slot-2','logo-slot-3'].forEach(function(id){ var el=document.getElementById(id); if(el) el.innerHTML=LOGO; });
+
+  // Тема
+  var root=document.documentElement, tb=document.getElementById('themeBtn');
+  tb.addEventListener('click',function(){
+    var dark = root.getAttribute('data-theme')==='dark'
+      || (!root.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    root.setAttribute('data-theme', dark?'light':'dark');
+  });
+
+  // Reveal on scroll
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}})},{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
+
+  // Плейсхолдер кнопки скачивания
+  document.getElementById('dlBtn').addEventListener('click',function(ev){
+    ev.preventDefault();
+    alert('Ссылка на скачивание появится здесь.\nЗагрузите APK (GitHub Releases / Netlify) и вставьте URL в кнопку.');
+  });
+
+  // Ambient: дрейфующие «листья» на канвасе
+  (function(){
+    var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var cv=document.getElementById('leaves'); if(!cv||reduce) return;
+    var ctx=cv.getContext('2d'), W,H, dots=[];
+    function size(){ var r=cv.getBoundingClientRect(); W=cv.width=r.width; H=cv.height=r.height;
+      dots=Array.from({length:34},function(){return {x:Math.random()*W,y:Math.random()*H,r:1+Math.random()*2.4,s:.2+Math.random()*.5,d:Math.random()*Math.PI*2};}); }
+    function tick(){ ctx.clearRect(0,0,W,H);
+      dots.forEach(function(p){ p.y-=p.s; p.x+=Math.sin(p.d+p.y*.01)*.3; if(p.y<-6){p.y=H+6;p.x=Math.random()*W;}
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fillStyle='rgba(126,226,176,'+(0.10+p.r*0.06)+')'; ctx.fill(); });
+      requestAnimationFrame(tick); }
+    size(); tick(); addEventListener('resize',size);
+  })();
+</script>
+</body>
+</html>
