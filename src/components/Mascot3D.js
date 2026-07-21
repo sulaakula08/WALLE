@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { GLView } from 'expo-gl';
-import { Renderer } from 'expo-three';
+import { Renderer, TextureLoader } from 'expo-three';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Asset } from 'expo-asset';
@@ -73,12 +73,44 @@ export default function Mascot3D({ style, autoRotate = true }) {
       });
       const arrayBuffer = base64ToArrayBuffer(base64);
 
+      // Текстуры вшиты в GLB — в RN three.js их не декодирует, поэтому
+      // грузим извлечённые PNG/JPG вручную и назначаем материалу.
+      const tl = new TextureLoader();
+      const [baseTex, mrTex, normalTex] = await Promise.all([
+        tl.loadAsync(require('../../assets/mascot/basecolor.jpg')),
+        tl.loadAsync(require('../../assets/mascot/metalrough.jpg')),
+        tl.loadAsync(require('../../assets/mascot/normal.jpg')),
+      ]);
+      [baseTex, mrTex, normalTex].forEach((tex) => {
+        tex.flipY = false; // ориентация UV как в glTF
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+      });
+      baseTex.colorSpace = THREE.SRGBColorSpace;
+      mrTex.colorSpace = THREE.NoColorSpace;
+      normalTex.colorSpace = THREE.NoColorSpace;
+
       const loader = new GLTFLoader();
       loader.parse(
         arrayBuffer,
         '',
         (gltf) => {
           const model = gltf.scene;
+
+          // назначаем текстуры материалам (PBR: baseColor + metal/rough + normal)
+          model.traverse((o) => {
+            if (o.isMesh && o.material) {
+              const m = o.material;
+              m.map = baseTex;
+              m.metalnessMap = mrTex;
+              m.roughnessMap = mrTex;
+              m.normalMap = normalTex;
+              m.metalness = 1;
+              m.roughness = 1;
+              m.needsUpdate = true;
+            }
+          });
+
           // центрируем и масштабируем под кадр
           const box = new THREE.Box3().setFromObject(model);
           const size = new THREE.Vector3();
