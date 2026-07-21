@@ -19,6 +19,8 @@ export const dictionaries = {
     onb_city: 'Город',
     onb_start: 'Начать',
     onb_name_required: 'Введите имя, чтобы продолжить',
+    mascot_hi: 'Привет! Я Walleхан',
+    mascot_sub: 'Твой эко-помощник',
 
     // Навигация
     tab_home: 'Главная',
@@ -182,6 +184,8 @@ export const dictionaries = {
     onb_city: 'Қала',
     onb_start: 'Бастау',
     onb_name_required: 'Жалғастыру үшін атыңызды енгізіңіз',
+    mascot_hi: 'Сәлем! Мен Walleханмын',
+    mascot_sub: 'Сенің эко-көмекшің',
 
     tab_home: 'Басты бет',
     tab_map: 'Карта',

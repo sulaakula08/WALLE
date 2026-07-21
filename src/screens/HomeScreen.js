@@ -14,6 +14,7 @@ import { LogoMark } from '../components/Logo';
 import { LangToggle } from '../components/AppHeader';
 import { Card, ProgressBar, SectionHeader } from '../components/ui';
 import { MaterialIcon } from '../components/MaterialIcon';
+import Mascot3D from '../components/Mascot3D';
 import { useI18n } from '../i18n/i18n';
 import { useApp } from '../store/AppState';
 import { colors, gradients, radius, spacing, shadow } from '../theme/theme';
@@ -113,6 +114,26 @@ export default function HomeScreen({ navigation }) {
             </View>
           </SafeAreaView>
         </LinearGradient>
+
+        {/* 3D-маскот */}
+        <View style={styles.mascotWrap}>
+          <LinearGradient
+            colors={['#0F4D3A', '#1E8E5A']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.mascotCard}
+          >
+            <View style={styles.mascotStage}>
+              <Mascot3D />
+            </View>
+            <View style={styles.mascotBubbleWrap}>
+              <View style={styles.mascotBubble}>
+                <Text style={styles.mascotHi}>{t('mascot_hi')}</Text>
+                <Text style={styles.mascotSub}>{t('mascot_sub')}</Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
 
         {/* Быстрые действия */}
         <View style={styles.body}>
@@ -243,6 +264,24 @@ const styles = StyleSheet.create({
   miniValue: { color: '#fff', fontSize: 15, fontWeight: '800', marginTop: 2 },
   miniLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 10.5, fontWeight: '600', textAlign: 'center' },
   divider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.2)' },
+  mascotWrap: { paddingHorizontal: 20, marginTop: 20 },
+  mascotCard: {
+    borderRadius: radius.xl,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 180,
+    ...shadow.card,
+  },
+  mascotStage: { width: 150, height: 160 },
+  mascotBubbleWrap: { flex: 1, marginLeft: 8 },
+  mascotBubble: {
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderRadius: radius.lg,
+    padding: 14,
+  },
+  mascotHi: { color: '#fff', fontSize: 17, fontWeight: '800' },
+  mascotSub: { color: colors.mint300, fontSize: 13, fontWeight: '600', marginTop: 3 },
   body: { paddingHorizontal: 20, paddingTop: 24 },
   qaGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   qaWrap: { width: (width - 40 - 12) / 2 },
